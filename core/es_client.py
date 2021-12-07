@@ -1,4 +1,3 @@
-from typing import List
 from elasticsearch import Elasticsearch
 
 from core.logging import logger

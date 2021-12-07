@@ -6,7 +6,7 @@ def verify_token(authorization: str = Header(None)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Token does not exist")
     if authorization != "something":
-        raise HTTPException(status_code=403, detail="Token invalid")
+        raise HTTPException(status_code=403, detail="Invalid Token")
 
 def decrypt():
     pass

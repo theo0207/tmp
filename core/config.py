@@ -2,7 +2,6 @@ import os
 import json
 
 from pathlib import Path
-from typing import List
 
 from pydantic import BaseSettings
 
@@ -19,6 +18,8 @@ def list_parse_fallback(v):
 
 class Settings(BaseSettings):
     elasticsearch_url: str
+    index_name: str
+    ip_whitelist: list
 
     class Config:
         env_file = f'{Path(os.path.dirname(__file__)).parent}/config/{PROFILE}.env'
