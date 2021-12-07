@@ -1,9 +1,9 @@
-from typing import Optional
 import uvicorn
 
-from fastapi import FastAPI, Header
+from typing import Optional
+from fastapi import FastAPI, Depends
 
-from utils.auth import auth_decorator
+from utils.auth import verify_token
 
 
 app = FastAPI()
@@ -23,16 +23,14 @@ async def shutdown():
     close_elasticsearch()
 
 
-@app.get("/search")
-@auth_decorator
-def search(session_token: Optional[str] = Header(None)):
+@app.get("/search", dependencies=[Depends(verify_token)])
+def search():
     pass
 
 
-@app.get("/export")
-@auth_decorator
-def export(session_token: Optional[str] = Header(None)):
-    return "Hello World!"
+@app.get("/export", dependencies=[Depends(verify_token)])
+def export():
+    pass
 
 
 if __name__ == '__main__':
