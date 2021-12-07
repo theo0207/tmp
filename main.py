@@ -3,7 +3,7 @@ import uvicorn
 from typing import Optional
 from fastapi import FastAPI, Depends
 
-from utils.auth import verify_token
+from core.auth import verify_token
 from core.es_client import es
 
 
