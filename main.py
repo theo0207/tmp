@@ -1,7 +1,9 @@
+import os
 import uvicorn
 
 from fastapi import FastAPI, Depends, Request, Header
 from fastapi.responses import JSONResponse, FileResponse
+from starlette.background import BackgroundTasks
 
 from core.auth import verify_token
 from core.config import config
@@ -44,12 +46,12 @@ def search(request: SearchRequest=None):
     pit = get_pit()
     query = get_query_from_template(**request)
     response = pagenated_search(pit, query)
-        
+
     return response
 
 
 @app.post("/export")
-def export(request:ExportReqeust=None, id:int = Depends(verify_token)):
+def export(background_tasks: BackgroundTasks, request:ExportReqeust=None, id:int = Depends(verify_token)):
     request = request.dict()
     pit = get_pit()
     query = get_query_from_template(**request)
@@ -58,7 +60,10 @@ def export(request:ExportReqeust=None, id:int = Depends(verify_token)):
     columns = request['columns']
     save_data_to_excel_file(columns, docs, id)
 
-    return FileResponse(config.excel_file_path+f'{id}.xlsx')
+    file_path = config.excel_file_path+f'{id}.xlsx'
+    background_tasks.add_task(os.remove, file_path)
+
+    return FileResponse(file_path)
 
 
 
