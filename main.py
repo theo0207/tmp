@@ -1,12 +1,13 @@
 import uvicorn
 
-from typing import Optional
-from fastapi import FastAPI, Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, Request, Header
+from fastapi.responses import JSONResponse, FileResponse
 
 from core.auth import verify_token
-from core.es_client import es
 from core.config import config
+from models.reqeusts import ExportReqeust, SearchRequest
+from utils.search_util import get_pit, get_query_from_template, pagenated_search
+from utils.export_util import save_data_to_excel_file
 
 
 app = FastAPI()
@@ -38,50 +39,28 @@ def shutdown():
 
 
 @app.post("/search", dependencies=[Depends(verify_token)])
-def search():
-    pit_id = es.client.open_point_in_time(index=config.index_name, keep_alive="5m")['id']
-    body = {
-        "params": {
-            "from": 0,
-            "size": 10000,
-        }
-    }
-    template = es.client.render_search_template(id="search-template", body=body)
-    query = template['template_output']['query']
-    pit = {
-        "id":  pit_id, 
-        "keep_alive": "5m"
-    }
-
-
-    registerd = None
-    shard_doc = None
-    search_after = None
-    response = []
-
-    while True:
-        if registerd and shard_doc:
-            search_after = [registerd, shard_doc]
-
-        result = es.client.search(query=query, size=10, pit=pit, sort={"registered":{"order":"desc"}}, 
-                                search_after=search_after)
-        hits = result['hits']['hits']
-
-        if not hits:
-            break
-
-        registerd, shard_doc = hits[-1]['sort']
-
-        for doc in hits:
-            del doc['sort']
-            response.append(doc)
-    
+def search(request: SearchRequest=None):
+    request = request.dict()
+    pit = get_pit()
+    query = get_query_from_template(**request)
+    response = pagenated_search(pit, query)
+        
     return response
 
 
-@app.post("/export", dependencies=[Depends(verify_token)])
-def export():
-    pass
+@app.post("/export")
+def export(request:ExportReqeust=None, id:int = Depends(verify_token)):
+    request = request.dict()
+    pit = get_pit()
+    query = get_query_from_template(**request)
+    docs = pagenated_search(pit, query)
+
+    columns = request['columns']
+    save_data_to_excel_file(columns, docs, id)
+
+    return FileResponse(config.excel_file_path+f'{id}.xlsx')
+
+
 
 
 if __name__ == '__main__':

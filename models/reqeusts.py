@@ -1,13 +1,16 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
 
 class SearchRequest(BaseModel):
-    pass
-    # name: str
-    # description: Optional[str] = None
+    from_: int
+    size: int
+    search_field: Optional[str] = None
+    search_keyword: Optional[str] = None
+    sort_field: Optional[str] = None
+    order: Optional[str] = None
 
 
-class ExportReqeust(BaseModel):
-    pass
+class ExportReqeust(SearchRequest):
+    columns: Optional[List[str]] = None

@@ -19,6 +19,7 @@ def list_parse_fallback(v):
 class Settings(BaseSettings):
     elasticsearch_url: str
     index_name: str
+    excel_file_path: str
     ip_whitelist: list
 
     class Config:
