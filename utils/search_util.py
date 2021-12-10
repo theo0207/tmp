@@ -10,7 +10,26 @@ def get_pit():
     }
     return pit
 
+
+def parse_filters(filters):
+    structured_filters = {}
+
+    for key, value in filters.items():
+        if value.get('from_'):
+            value['from'] = value.pop('from_')
+            structured_filters[key]={key:date.strftime('%Y-%m-%d') for key, date in value.items()}
+        else:
+            structured_filters[key] = {}
+            clauses = [{"match_phrase":{key:clause}} for clause in value['clauses']]
+            structured_filters[key]['exist'] = value['exist']
+            structured_filters[key]['clauses'] = clauses
+
+    return structured_filters
+
+
 def get_query_from_template(**kwargs):
+    filters = parse_filters(kwargs['filters'])
+
     template_body = {
         "params": {
             "from": kwargs['from_'],
@@ -18,12 +37,13 @@ def get_query_from_template(**kwargs):
             "search_fied": kwargs['search_field'],
             "search_keyword": kwargs['search_keyword'],
             "sort_field": kwargs['sort_field'],
-            "order": kwargs['order']
+            "filter": filters
         }
     }
-
+    print(template_body)
     template = es.client.render_search_template(id="search-template", body=template_body)
     return template['template_output']['query']
+
 
 def pagenated_search(pit, query):
     response = []
